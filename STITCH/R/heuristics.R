@@ -1,6 +1,6 @@
 ## in a simple refill, look every 100 SNP.
 ## in each one with an average below a threshold,
-## see who was in that haplotype before. then extend out their choice 
+## see who was in that haplotype before. then extend out their choice
 ## sample from other haplotypes to re-copy
 ## across all haplotypes, when this happen, inject noise
 refillSimple <- function(
@@ -11,7 +11,7 @@ refillSimple <- function(
     grid,
     distance_between_check = 5000 ## check every 5000 bp
 ) {
-    ## 
+    ##
     K <- nrow(gammaSum_tc)
     S <- dim(gammaSum_tc)[3]
     nGrids <- ncol(hapSum_tc)
@@ -26,16 +26,16 @@ refillSimple <- function(
         region_ends <- c(a[-1] - 1, length(L_grid))
     }
     avHapSumInBlock <- array(0, c(length(region_starts), K, S))
-    ever_changed <- array(FALSE, c(ncol(gammaSum_tc), S))    
+    ever_changed <- array(FALSE, c(ncol(gammaSum_tc), S))
     for(s in 1:S) {
         for(i in 1:length(region_starts)) {
             n <- region_ends[i] - region_starts[i] + 1
             avHapSumInBlock[i, , s] <- rowSums(hapSum_tc[, region_starts[i]:region_ends[i], s, drop = FALSE]) / n
         }
-        ## really target haplotypes that basically aren't used    
+        ## really target haplotypes that basically aren't used
         hapFreqMin <- N * min(c(1 / (10 * K), 1 / 100))
         replaceBlock <- avHapSumInBlock[, , s, drop = FALSE] < (hapFreqMin)
-        ## 
+        ##
         ## for each k, for each region, fill in
         ## within each continuous region, fill in with respect to frequencies of all other haplotypes
         ##
@@ -97,10 +97,10 @@ get_nbreaks <- function(
     shuffle_bin_nSNPs = NULL,
     shuffle_bin_radius = 5000
 ) {
-    ## 
+    ##
     list_of_break_results <- lapply(1:S, function(x) NULL)
-    nbreaks <- rep(0, S)            
-    ## 
+    nbreaks <- rep(0, S)
+    ##
     if (iteration %in% shuffleHaplotypeIterations) {
         for(s in 1:S) {
             if (!is.null(shuffle_bin_radius)) {
@@ -108,9 +108,9 @@ get_nbreaks <- function(
                 ## now, load break_results
                 ## NOTE - can be NULL, but unlikely
                 load(file_break_results(tempdir = tempdir, regionName = regionName, s = s))
-                ## 
+                ##
                 if (length(break_results) > 0) {
-                    list_of_break_results[[s]] <- break_results                    
+                    list_of_break_results[[s]] <- break_results
                     nbreaks[s] <- nrow(break_results)
                 }
             } else {
@@ -151,7 +151,7 @@ determine_switch_order <- function(fromMat, nbreaks, K) {
         fromR <- array(0, K)
         toR <- array(0, K)
         for(j in 1:(K - 1)) {
-            ## 
+            ##
             x <- which(fromMatL == max(fromMatL), arr.ind = TRUE)[1, ]
             f <- x[1]
             t <- x[2]
@@ -215,7 +215,7 @@ getBetterSwitchesSimple <- function(
     ## fromMat <- list_of_fromMat[[s]]
     ## nbreak <- nbreaks[s]
     ## choose, in order, one which means fewest moves
-    switchOrder <- determine_switch_order(fromMat, nbreak, K) 
+    switchOrder <- determine_switch_order(fromMat, nbreak, K)
     whichIsBest <- as.integer(apply(switchOrder,1,function(x) sum(x==(1:K)))==K)
     ## to_store[i_s] <- sum(whichIsBest!=1)
     ## list_of_whichIsBest[[i_s]]<- whichIsBest
@@ -228,13 +228,13 @@ getBetterSwitchesSimple <- function(
     grid_ends <- c(break_results[, "left_grid_focal_0_based"], ncol(alphaMatFuture_t) - 1)
     for(iBreak in 1:(nbreak + 1)) {
         ## grids, 0-based, can just be a number
-        which_grids <- grid_starts[iBreak]:grid_ends[iBreak] 
+        which_grids <- grid_starts[iBreak]:grid_ends[iBreak]
         ## snps, 1-based
         which_snps <- c(
             snps_in_grid_1_based[grid_starts[iBreak] + 1, "snps_start"]:
             snps_in_grid_1_based[grid_ends[iBreak] + 1, "snps_end"]
         )
-        ## 
+        ##
         permL <- tempMat[iBreak, ]
         eHapsFuture_t[, which_snps] <- eHapsFuture_t[permL, which_snps]
         alphaMatFuture_t[, which_grids] <- alphaMatFuture_t[permL, which_grids]
@@ -303,8 +303,8 @@ define_and_save_breaks_to_consider <- function(
     S <- ncol(sigmaSum_m_unnormalized)
     ## if too few SNPs, do not bother
     if (nGrids < 5) {
-        break_results <- NULL    
-        for(s in 1:S) {        
+        break_results <- NULL
+        for(s in 1:S) {
             save(break_results, file = file_break_results(tempdir = tempdir, regionName = regionName, s = s))
         }
     }
@@ -319,7 +319,7 @@ define_and_save_breaks_to_consider <- function(
             shuffle_bin_radius = shuffle_bin_radius
         )
         ## normalize against max rate
-        smoothed_rate <- smoothed_rate / 
+        smoothed_rate <- smoothed_rate /
             ((nGen * maxRate * 1/100/1000000))
         ##
         out <- choose_points_to_break(
@@ -377,7 +377,7 @@ make_smoothed_cM_rate <- function(
     L_grid,
     shuffle_bin_radius = 5000
 ) {
-    ## 
+    ##
     new_L <- L_grid[-length(L_grid)] + diff(L_grid)/2
     n <- length(new_L)
     new_L <- c(
@@ -396,7 +396,7 @@ make_smoothed_cM_rate <- function(
 ##
 ## returns one entry of average rate between pairs of SNPs
 ## value is average for middle point +/- shuffle_bin_radius
-## 
+##
 make_smoothed_rate <- function(
     sigma_rate,
     L_grid,
@@ -422,7 +422,7 @@ make_smoothed_rate <- function(
             print_message(paste0("The focal point is:", focal_point))
             print_message(paste0("So, arguably, we want from:", focal_point - shuffle_bin_radius, " to ", focal_point + shuffle_bin_radius))
         }
-        ## 
+        ##
         ## left
         ## so re-call
         ## start with focal SNP, defined by position average of iGrid and iGrid + 1
@@ -448,7 +448,7 @@ make_smoothed_rate <- function(
             smoothed_rate[iGrid] <- smoothed_rate[iGrid] + bp_to_add * sigma_rate[iGrid_left]
             total_bp_added <- total_bp_added + bp_to_add
             bp_prev <- L_grid[iGrid_left]
-            iGrid_left <- iGrid_left - 1                
+            iGrid_left <- iGrid_left - 1
         }
         ## right
         ## so recall. start with iGrid, then iGrid_right starts one to the right
@@ -470,7 +470,7 @@ make_smoothed_rate <- function(
             if (verbose) {
                 print_message(paste0("This is iGrid right :", iGrid_right))
                 print_message(paste0("This is effectively from, inclusively:", bp_prev, " to ", bp_prev + bp_to_add - 1))
-                print_message(paste0("We are adding this many bp: ", bp_to_add))            
+                print_message(paste0("We are adding this many bp: ", bp_to_add))
                 print_message(paste0("Using rate: ", sigma_rate[iGrid_right - 1]))
             }
             smoothed_rate[iGrid] <- smoothed_rate[iGrid] +
@@ -486,7 +486,7 @@ make_smoothed_rate <- function(
 
 
 
-## 
+##
 choose_points_to_break <- function(
     smoothed_rate,
     nGrids,
@@ -501,7 +501,7 @@ choose_points_to_break <- function(
         max_breaks <- max(1000, round(nGrids / 100))
     }
     smoothed_rate[1] <- NA
-    smoothed_rate[length(smoothed_rate)] <- NA    
+    smoothed_rate[length(smoothed_rate)] <- NA
     ## now, those > 1 are great candidates
     ## alternatively, if nGen not quite right (or rates not changed!)
     ## anything really "peaky"
@@ -595,7 +595,7 @@ choose_points_to_break <- function(
     }
     if ((length(results) / 4) > 0) {
         colnames(results) <- colnames
-        results <- results[order(results[, "left_grid_focal_0_based"]), , drop = FALSE]        
+        results <- results[order(results[, "left_grid_focal_0_based"]), , drop = FALSE]
     }
     return(
         list(
@@ -610,7 +610,7 @@ get_snps_to_nuke <- function(grid_distances, nGrids, shuffle_bin_radius, snp_bes
     ## nuke those within 2 * shuffle_bin_radius of central SNP
     ## or those within snp_left, snp_right
     dist_left <- grid_distances[snp_best] / 2
-    ## 
+    ##
     snp_nuke_left <- snp_best
     while((1 < snp_nuke_left) & (dist_left < (2 * shuffle_bin_radius))) {
         snp_nuke_left <- snp_nuke_left - 1
@@ -673,7 +673,7 @@ R_determine_where_to_stop <- function(
         if ((snp_consider <= 2) | ((nGrids - 3) <= snp_consider)) {
             done <- 1
         }
-        ## do not continue if not available i.e. in previous region        
+        ## do not continue if not available i.e. in previous region
         if (available[snp_consider + (-1) * mult] == FALSE) {
             done <- 1
         }
@@ -736,7 +736,7 @@ plot_attempt_to_find_shuffles <- function(
         print_message("Insufficient SNPs to try to find shuffled haplotypes")
         return(NULL)
     }
-    xlim <- c(head(L_grid)[1], tail(L_grid)[1])    
+    xlim <- c(head(L_grid)[1], tail(L_grid)[1])
     ## do plot here
     if (is_reference) {
         ref_text <- ".ref"
@@ -748,18 +748,18 @@ plot_attempt_to_find_shuffles <- function(
     width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
     png(outname, height = 30, width = width, res = 100, units = "in")
     par(mfrow = c(3, 1))
-    x <- L_grid[-1] - grid_distances    
+    x <- L_grid[-1] - grid_distances
     xleft <- L_grid[-length(L_grid)]
     xright <- L_grid[-1]
     ## for fbdstore
-    midpoints <- L_grid[-1] - grid_distances / 2    
+    midpoints <- L_grid[-1] - grid_distances / 2
     xleft2 <- c(L_grid[1], midpoints)
     xright2 <- c(midpoints, L_grid[length(L_grid)])
     ##
     ## 0) plot fine and "coarse" scale recombination
     ##
     r <- c(
-        range(recomb_usage[, "min_rate"]),        
+        range(recomb_usage[, "min_rate"]),
         range(recomb_usage[, "realized_rate"]),
         range(recomb_usage[, "max_rate"])
     )
@@ -783,7 +783,7 @@ plot_attempt_to_find_shuffles <- function(
     add_grey_background(L_grid)
     lines(x = x, y = smoothed_rate, lwd = 2)
     for(iBreak in 1:nrow(break_results)) {
-        if (include_vertical_lines) {        
+        if (include_vertical_lines) {
             abline(v = midpoints[break_results[iBreak, "left_grid_break_0_based"] + 1], col = "red")
             abline(v = midpoints[break_results[iBreak, "left_grid_focal_0_based"] + 1], col = "purple")
             abline(v = midpoints[break_results[iBreak, "right_grid_break_0_based"] + 1], col = "red")
@@ -815,7 +815,7 @@ plot_attempt_to_find_shuffles <- function(
     }
     add_grey_background(L_grid)
     K <- nrow(fbd_store[[1]]$gammaK_t)
-    cbPalette <- rep(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 100)    
+    cbPalette <- rep(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 100)
     legend("topright", paste0("anc_hap=", 1:K), col = cbPalette[1:K], lwd = 2)
     dev.off()
 }
@@ -923,7 +923,7 @@ interim_plotter <- function(
             s = s,
             S = S,
             final_iteration = final_iteration,
-            is_reference = is_reference            
+            is_reference = is_reference
         )
         plotAlphaMatCurrent_t(
             L_grid = L_grid,
@@ -935,7 +935,7 @@ interim_plotter <- function(
             s = s,
             S = S,
             final_iteration = final_iteration,
-            is_reference = is_reference            
+            is_reference = is_reference
         )
     }
     return(NULL)
@@ -981,9 +981,9 @@ plotHapSumCurrent_t <- function(
 ) {
     ##
     outname <- interim_plot_name("hapSum", regionName, outputdir, s, S, iteration, final_iteration, is_reference)
-    ## 
-    width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)    
-    png(outname, height = 10, width = width, res = 100, units = "in")    
+    ##
+    width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
+    png(outname, height = 10, width = width, res = 100, units = "in")
     colStore <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
     nCols <- length(colStore)
     sum <- array(0, nGrids)
@@ -1023,14 +1023,14 @@ plotHapSumCurrent_t_log <- function(
     is_reference
 ) {
     outname <- interim_plot_name("hapSum_log", regionName, outputdir, s, S, iteration, final_iteration, is_reference)
-    ## 
+    ##
     width <- min(max(20, (L_grid[length(L_grid)] - L_grid[1]) / 1e6 * 12), 200)
     png(outname, height = 10, width = width, res = 100, units = "in")
     main <- "log10 of average haplotype usage vs physical position"
     colStore <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
     nCols <- length(colStore)
     sum <- array(0, nGrids)
-    xlim <- range(L_grid) / 1e6    
+    xlim <- range(L_grid) / 1e6
     ylim <- c(log10(max(1, min(hapSumCurrent_t))), log10(max(hapSumCurrent_t)))
     if (sum(hapSumCurrent_t) == 0) {
         stop("Something has done wrong and an ampty hapSumCurrent_t has been passed to plotHapSumCurrent_t_log")
@@ -1111,7 +1111,7 @@ apply_better_switches_if_appropriate <- function(
     ## only do for s that suit it
     K <- dim(eHapsCurrent_tc)[1]
     S <- dim(eHapsCurrent_tc)[3]
-    ## 
+    ##
     list_of_whichIsBest <- lapply(1:S, function(s) return(NA))
     for(s in 1:S) {
         if (nbreaks[s] > 0) {
@@ -1134,7 +1134,7 @@ apply_better_switches_if_appropriate <- function(
     if (sum(nbreaks) > 0) {
         to_store <- sapply(list_of_whichIsBest, function(whichIsBest) sum(whichIsBest!=1, na.rm = TRUE))
         print_message(paste0(
-            "Shuffle haplotypes - Iteration ", iteration, " - ", 
+            "Shuffle haplotypes - Iteration ", iteration, " - ",
             "change on average ", round(sum(to_store) / S, 1), " intervals out of ", sum(nbreaks) / S, " considered"
         ))
     }
@@ -1153,7 +1153,7 @@ apply_better_switches_if_appropriate <- function(
     return(
         list(
             eHapsCurrent_tc = eHapsCurrent_tc,
-            alphaMatCurrent_tc = alphaMatCurrent_tc            
+            alphaMatCurrent_tc = alphaMatCurrent_tc
         )
     )
 }
@@ -1208,7 +1208,7 @@ findRecombinedReadsPerSample <- function(
             srp <- out$srp
             count <- count + as.integer(out$did_split)
         } # end of loop on reads
-        new_order <- order(unlist(lapply(sampleReads,function(x) x[[2]])))        
+        new_order <- order(unlist(lapply(sampleReads,function(x) x[[2]])))
         sampleReads <- sampleReads[new_order]
         save(sampleReads, file = file_sampleReads(tempdir, iSample, regionName), compress = FALSE)
         if (verbose) {
@@ -1225,7 +1225,7 @@ findRecombinedReadsPerSample <- function(
                 srp, pRgivenH1_m, pRgivenH2_m,
                 file = file_sampleProbs(tempdir, iSample, regionName)
             )
-        }        
+        }
     }
     return(
         list(
@@ -1319,7 +1319,7 @@ split_a_read <- function(
             pRgivenH1_m <- rbind(pRgivenH1_m, runif(ncol(pRgivenH1_m)))
             pRgivenH2_m <- rbind(pRgivenH2_m, runif(ncol(pRgivenH2_m)))
             srp <- c(srp, new_read_2[[2]])
-        }        
+        }
     }
 
     return(
@@ -1328,7 +1328,7 @@ split_a_read <- function(
             did_split = did_split,
             pRgivenH1_m = pRgivenH1_m,
             pRgivenH2_m = pRgivenH2_m,
-            srp = srp            
+            srp = srp
         )
     )
 }
@@ -1336,7 +1336,7 @@ split_a_read <- function(
 
 check_split_reads_function <- function(sampleRead, new_read_1, new_read_2, grid) {
     ## check J is OK
-    J <- sampleRead[[1]] + 1            
+    J <- sampleRead[[1]] + 1
     J1 <- new_read_1[[1]] + 1
     J2 <- new_read_2[[1]] + 1
     check1 <-
@@ -1345,33 +1345,33 @@ check_split_reads_function <- function(sampleRead, new_read_1, new_read_2, grid)
     cr1 <- new_read_1[[2]]
     cr2 <- new_read_2[[2]]
     check2 <-
-        (0 <= cr1) & 
-        (0 <= cr2) & 
-        (cr1 <= max(grid)) & 
+        (0 <= cr1) &
+        (0 <= cr2) &
+        (cr1 <= max(grid)) &
         (cr2 <= max(grid))
     ## check u OK
-    u <- sampleRead[[4]] + 1            
+    u <- sampleRead[[4]] + 1
     u1 <- new_read_1[[4]] + 1
-    u2 <- new_read_2[[4]] + 1            
+    u2 <- new_read_2[[4]] + 1
     check3 <-
         (sum((u != c(u1, u2))) == 0)
     ## check bq OK
-    bq <- sampleRead[[3]] + 1            
+    bq <- sampleRead[[3]] + 1
     bq1 <- new_read_1[[3]] + 1
     bq2 <- new_read_2[[3]] + 1
-    check4 <- 
+    check4 <-
         (sum((bq != c(bq1, bq2))) == 0)
     if (!(check1 & check2 & check3 & check4)) {
         print("sampleRead")
         print(sampleRead)
         print("new_read_1")
         print(new_read_1)
-        print("new_read_2")        
-        print(new_read_2)        
+        print("new_read_2")
+        print(new_read_2)
         stop("There was an error splitting a read. Please see above")
     }
     return(NULL)
 }
-            
+
 
 

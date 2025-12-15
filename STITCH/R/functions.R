@@ -77,6 +77,8 @@
 #' @param use_bx_tag Whether to try and use BX tag in same to indicate that reads come from the same underlying molecule
 #' @param bxTagUpperLimit When using BX tag, at what distance between reads to consider reads with the same BX tag to come from different molecules
 #' @param do_phasing Whether to try and output phasing (experimental)
+#' @param testing_on_subset if testing on a subset to find optimal parameter
+#' combinations, set to TRUE to output intermediate results.
 #' @return Results in properly formatted version
 #' @author Robert Davies
 #' @export
@@ -87,7 +89,7 @@ STITCH <- function(
     K,
     S = 1,
     outputdir,
-    nStarts,
+    testing_on_subset = FALSE,
     tempdir = NA,
     bamlist = "",
     cramlist = "",
@@ -617,6 +619,73 @@ STITCH <- function(
         ##
         results <- completeSampleIteration(eHapsCurrent_tc = eHapsCurrent_tc, alphaMatCurrent_tc = alphaMatCurrent_tc, sigmaCurrent_m = sigmaCurrent_m, priorCurrent_m = priorCurrent_m, N = N, tempdir = tempdir,chr=chr, maxDifferenceBetweenReads=maxDifferenceBetweenReads,maxEmissionMatrixDifference = maxEmissionMatrixDifference,Jmax=Jmax,highCovInLow=highCovInLow,iteration=iteration,method=method,expRate=expRate,minRate=minRate,maxRate=maxRate,niterations=niterations,splitReadIterations=splitReadIterations,shuffleHaplotypeIterations=shuffleHaplotypeIterations,nCores=nCores,L=L,nGen=nGen,emissionThreshold=emissionThreshold,alphaMatThreshold=alphaMatThreshold,gen=gen,outputdir=outputdir,pseudoHaploidModel=pseudoHaploidModel,outputHaplotypeProbabilities=outputHaplotypeProbabilities,switchModelIteration=switchModelIteration,regionName=regionName,restartIterations=restartIterations,refillIterations=refillIterations,outputBlockSize=outputBlockSize, bundling_info = bundling_info, alleleCount = alleleCount, phase = phase, samples_with_phase = samples_with_phase, vcf.piece_unique = vcf.piece_unique, grid = grid, grid_distances = grid_distances, L_grid = L_grid, B_bit_prob = B_bit_prob, start_and_end_minus_buffer = start_and_end_minus_buffer, shuffle_bin_nSNPs = shuffle_bin_nSNPs, shuffle_bin_radius = shuffle_bin_radius, plot_shuffle_haplotype_attempts = plot_shuffle_haplotype_attempts, blocks_for_output = blocks_for_output, allSampleReads = allSampleReads, snps_in_grid_1_based = snps_in_grid_1_based, minimizeSwitchingIterations = minimizeSwitchingIterations, useTempdirWhileWriting = useTempdirWhileWriting, do_phasing = do_phasing, phasing_method = phasing_method, phasing_n_votes = phasing_n_votes)
         ##
+        if (testing_on_subset == TRUE) {
+            out <- extract_debug_output(
+                output_filename = output_filename,
+                outputdir = outputdir,
+                regionName = regionName,
+                output_format = output_format,
+                blocks_for_output = blocks_for_output,
+                allAlphaBetaBlocks = allAlphaBetaBlocks,
+                allPhasing = allPhasing,
+                reference_panel_SNPs = reference_panel_SNPs,
+                priorCurrent_m = priorCurrent_m,
+                sigmaCurrent_m = sigmaCurrent_m,
+                alphaMatCurrent_tc = alphaMatCurrent_tc,
+                eHapsCurrent_tc = eHapsCurrent_tc,
+                N = N,
+                method = method,
+                sampleNames = sampleNames,
+                nSNPs = nSNPs,
+                nCores = nCores,
+                B_bit_prob = B_bit_prob,
+                bundling_info = bundling_info,
+                tempdir = tempdir,
+                grid = grid,
+                nGrids = nGrids,
+                alleleCount = alleleCount,
+                pos = pos,
+                K = K,
+                highCovInLow = highCovInLow,
+                start_and_end_minus_buffer = start_and_end_minus_buffer,
+                allSampleReads = allSampleReads,
+                niterations = niterations,
+                maxEmissionMatrixDifference = maxEmissionMatrixDifference,
+                maxDifferenceBetweenReads = maxDifferenceBetweenReads,
+                Jmax = Jmax,
+                useTempdirWhileWriting = useTempdirWhileWriting,
+                output_haplotype_dosages = output_haplotype_dosages,
+                do_phasing = do_phasing
+            )
+
+            gen_imp <- out$gen_imp
+            estimatedAlleleFrequency <- out$estimatedAlleleFrequency
+            info <- out$info
+            hwe <- out$hwe
+            hweCount <- out$hweCount
+            passQC <- info > 0.4 & hwe > 1e-6 # one interpretation of passQC
+
+            save(
+                eHapsCurrent_tc, alphaMatCurrent_tc,
+                sigmaCurrent_m, priorCurrent_m,
+                hapSumCurrent_tc,
+                alleleCount,
+                estimatedAlleleFrequency,
+                pos, gen, L,
+                nCores, N, nSNPs, chr, K, niterations, nGen,
+                gen_imp,
+                gridWindowSize, grid, grid_distances, L_grid, nGrids, snps_in_grid_1_based,
+                inRegionL, start_and_end_minus_buffer,
+                reference_panel_SNPs, ref_alleleCount,
+                info, hwe, passQC, hweCount,
+                file = file.path(
+                    outputdir, "RData", paste0("EM.all.", iteration, ".RData")
+                )
+            )
+        }
+
+
+
         if (iteration == niterations) {
             allPhasing <- results$allPhasing
             allAlphaBetaBlocks <- results$allAlphaBetaBlocks
@@ -662,10 +731,15 @@ STITCH <- function(
             priorCurrent_m <- priorFuture_m
             rm(eHapsFuture_tc, alphaMatFuture_tc, sigmaFuture_m, priorFuture_m)
         }
+
+
+
         ## GC a bit if big enough data
         if ((nSNPs > 3000) | (N > 3000)) {
             gc(reset = TRUE); gc(reset = TRUE)
         }
+
+
     }
 
     print_message_and_save_time(outputdir, regionName, "End EM", "endEM")
